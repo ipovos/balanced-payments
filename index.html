@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Balanced payments</title>
+</head>
+<body>
+
+<style>
+    html, body {
+        line-height: 1.5;
+    }
+
+    input {
+        display: block;
+    }
+
+    .validation {
+        color: red;
+    }
+</style>
+
+<div><label>Price <input type="number" name="price" id="price" step="0.01"></label></div>
+
+<div><label>First partner's salary <input type="number" name="salary-a" id="salary-a" step="0.01"></label></div>
+<div><label>Second partner's salary <input type="number" name="salary-b" id="salary-b" step="0.01"></label></div>
+
+<br />
+
+<div>First partner pay: <span id="payment-a"></span></div>
+<div>Second partner pay: <span id="payment-b"></span></div>
+<div class="validation" id="validation">Input salaries and price</div>
+
+<script>
+  const salaryAInputElement = document.querySelector('#salary-a');
+  const salaryBInputElement = document.querySelector('#salary-b');
+  const priceInputElement = document.querySelector('#price');
+
+  const paymentAElement = document.querySelector('#payment-a');
+  const paymentBElement = document.querySelector('#payment-b');
+  const validationElement = document.querySelector('#validation');
+
+  function initialize(persistedValues) {
+    const {salaryA, salaryB} = persistedValues;
+    salaryAInputElement.value = salaryA;
+    salaryBInputElement.value = salaryB;
+
+    [salaryAInputElement, salaryBInputElement, priceInputElement].forEach((element) => {
+      element.addEventListener('input', calculate);
+    });
+    [salaryAInputElement, salaryBInputElement].forEach((element) => {
+      element.addEventListener('input', persistValue);
+    });
+  }
+
+  function calculate() {
+    const salaryA = parseFloat(salaryAInputElement.value);
+    const salaryB = parseFloat(salaryBInputElement.value);
+    const price = parseFloat(priceInputElement.value);
+
+    const isValid = [salaryA, salaryB, price].every((value) => !Object.is(value, NaN));
+    if (!isValid) {
+      paymentAElement.textContent = '';
+      paymentBElement.textContent = '';
+      validationElement.textContent = 'Input salaries and price';
+      return;
+    }
+
+    const ratio = getRatio(salaryA, salaryB, price);
+
+    const paymentA = getPayment(salaryA, price, ratio);
+    const paymentB = getPayment(salaryB, price, ratio);
+
+    paymentAElement.textContent = round(paymentA, 2);
+    paymentBElement.textContent = round(paymentB, 2);
+    validationElement.textContent = '';
+  }
+
+  function persistValue(event) {
+    localStorage.setItem(event.target.name, event.target.value);
+  }
+
+  function getPersistedValues() {
+    const salaryA = localStorage.getItem('salary-a') ?? '';
+    const salaryB = localStorage.getItem('salary-b') ?? '';
+
+    return {
+      salaryA,
+      salaryB,
+    };
+  }
+
+  function getRatio(salaryA, salaryB, price) {
+    return price / (salaryA + salaryB + 2 * price);
+  }
+
+  function getPayment(salary, price, ratio) {
+    return ratio * salary + ratio * price;
+  }
+
+  function round(value, precision) {
+    const ratio = 10 * precision;
+    return Math.round(value * ratio) / ratio;
+  }
+
+  initialize(getPersistedValues());
+</script>
+</body>
+</html>
